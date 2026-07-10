@@ -1,11 +1,8 @@
 ---
-BasedOnStyle: LLVM
-IndentWidth: 4
-ColumnLimit: 100
-AccessModifierOffset: -2
-NamespaceIndentation: None
-AllowShortIfStatementsOnASingleLine: false
-AllowShortFunctionsOnASingleLine: Inline
-SortIncludes: true
-PointerAlignment: Left
-ReferenceAlignment: Left
+BasedOnStyle: Google
+
+# --- Future Customization Options ---
+# To change these settings, uncomment them (remove the '#') and adjust the values.
+
+# IndentWidth: 4      # Default is 2. Increase to 4 if you prefer wider indents.
+# ColumnLimit: 100    # Default is 80.  Increase to 120 if you prefer readability.

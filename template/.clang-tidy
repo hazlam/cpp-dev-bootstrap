@@ -7,10 +7,9 @@ Checks: >
   performance-*,
   portability-*,
   readability-*,
+  google-*,
   -modernize-use-trailing-return-type,
-  -readability-identifier-length,
-  -readability-magic-numbers,
-  -cppcoreguidelines-avoid-magic-numbers
+  -readability-identifier-length
 WarningsAsErrors: ''
 HeaderFilterRegex: '.*'
 FormatStyle: file
