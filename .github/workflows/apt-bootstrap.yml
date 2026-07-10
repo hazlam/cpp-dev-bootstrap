@@ -36,8 +36,8 @@ jobs:
 
       - name: Scaffold a fresh project and build + run it
         run: |
+          set -o pipefail
           ./new-project.sh "$RUNNER_TEMP/smoke"
           cd "$RUNNER_TEMP/smoke"
-          out="$(make run)"
-          printf '%s\n' "$out"
-          printf '%s\n' "$out" | grep -q 'Hello, world!'
+          make run | tee "$RUNNER_TEMP/run.log"
+          grep -q 'Hello, world!' "$RUNNER_TEMP/run.log"

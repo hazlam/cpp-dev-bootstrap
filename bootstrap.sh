@@ -100,8 +100,12 @@ install_llvm_apt() {
 # `clang++`/`clang-tidy`/`clang-format` (so it works unmodified on Arch and
 # Homebrew, which don't version these). On apt systems the packages above
 # only install `clang-$LLVM_VERSION` etc., so point the unversioned names at
-# them via update-alternatives. `--install` is idempotent -- re-running with
-# the same paths/priority is a no-op.
+# them via update-alternatives. Some base images (e.g. GitHub Actions'
+# ubuntu-22.04/24.04 runners) already have these names registered in
+# *manual* mode pointing at an older distro clang -- manual mode ignores
+# priority and won't auto-switch on `--install` alone, so follow up with an
+# explicit `--set` to force the pinned version regardless of prior state.
+# Both calls are idempotent -- re-running with the same paths is a no-op.
 register_llvm_alternatives() {
   log "Pointing unversioned clang tools at clang-$LLVM_VERSION"
   local tool
@@ -109,14 +113,17 @@ register_llvm_alternatives() {
     if [ -x "/usr/bin/${tool}-${LLVM_VERSION}" ]; then
       sudo update-alternatives --install "/usr/bin/$tool" "$tool" \
         "/usr/bin/${tool}-${LLVM_VERSION}" 100
+      sudo update-alternatives --set "$tool" "/usr/bin/${tool}-${LLVM_VERSION}"
     fi
   done
   if [ -x "/usr/bin/lld-${LLVM_VERSION}" ]; then
     sudo update-alternatives --install /usr/bin/lld lld "/usr/bin/lld-${LLVM_VERSION}" 100
+    sudo update-alternatives --set lld "/usr/bin/lld-${LLVM_VERSION}"
   fi
   if [ -x "/usr/bin/ld.lld-${LLVM_VERSION}" ]; then
     sudo update-alternatives --install /usr/bin/ld.lld ld.lld \
       "/usr/bin/ld.lld-${LLVM_VERSION}" 100
+    sudo update-alternatives --set ld.lld "/usr/bin/ld.lld-${LLVM_VERSION}"
   fi
 }
 
