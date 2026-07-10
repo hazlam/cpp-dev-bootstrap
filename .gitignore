@@ -1,0 +1,6 @@
+# OS / editor cruft at the repo root. Per-project build artifacts are
+# handled by template/.gitignore (and copied into every new project).
+.DS_Store
+.vscode/
+.idea/
+*.swp

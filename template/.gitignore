@@ -1,0 +1,15 @@
+build/
+build-debug/
+build-tsan/
+build-msan/
+build-release/
+vcpkg_installed/
+compile_commands.json
+.cache/
+*.o
+*.out
+
+# Editor / IDE
+.vscode/
+.idea/
+*.swp
