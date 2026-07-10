@@ -1,0 +1,43 @@
+# Exercises the apt/Ubuntu path end-to-end: the real bootstrap.sh, then a
+# fresh new-project.sh scaffold, built and run. This is the path that was
+# untested and broke on C++23 <print>/std::println (see issue #1) -- a green
+# run here is direct proof it stays fixed on apt-based machines.
+name: apt-bootstrap
+on:
+  push:
+  pull_request:
+  workflow_dispatch:
+
+jobs:
+  bootstrap-build:
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-22.04, ubuntu-24.04] # 22.04 = the original failing box
+    runs-on: ${{ matrix.os }}
+    env:
+      DEBIAN_FRONTEND: noninteractive
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Bootstrap the apt toolchain path
+        run: ./bootstrap.sh
+
+      - name: Expose VCPKG_ROOT to later steps
+        # bootstrap.sh only writes VCPKG_ROOT to ~/.bashrc, which a fresh
+        # non-login CI step never sources.
+        run: echo "VCPKG_ROOT=$HOME/vcpkg" >> "$GITHUB_ENV"
+
+      - name: Verify unversioned tools resolve to the pinned LLVM
+        run: |
+          clang++ --version
+          clang-tidy --version
+          clang-format --version
+
+      - name: Scaffold a fresh project and build + run it
+        run: |
+          ./new-project.sh "$RUNNER_TEMP/smoke"
+          cd "$RUNNER_TEMP/smoke"
+          out="$(make run)"
+          printf '%s\n' "$out"
+          printf '%s\n' "$out" | grep -q 'Hello, world!'
