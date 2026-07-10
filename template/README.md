@@ -14,11 +14,11 @@ make format    # clang-format src/
 make tidy      # clang-tidy src/
 make release   # optimized build, no sanitizers -> build-release/app
 make debug-tsan # ThreadSanitizer build (own dir) -> build-tsan/app
-make debug-msan # MemorySanitizer build (own dir, clang-only, best-effort)
+make debug-msan # MemorySanitizer build (own dir, clang-only, Linux-only)
 make clean     # remove all build dirs
 ```
 
-Compare against GCC any time with `make CXX=g++ CC=gcc build`.
+Compare against GCC any time with `make CXX=g++ build`.
 
 ## Sanitizers
 
@@ -31,9 +31,11 @@ sets cannot be linked together:
   misaligned access, etc. Good default for most learning projects.
 - **TSan** (`make debug-tsan`) — data races across threads. Use for the
   concurrency projects.
-- **MSan** (`make debug-msan`) — reads of uninitialized memory. Clang-only. Can
-  produce false positives if code links against a non-MSan-instrumented
-  standard library; treat findings as a lead to investigate, not gospel.
+- **MSan** (`make debug-msan`) — reads of uninitialized memory. Clang-only and
+  **Linux-only** (MemorySanitizer doesn't support macOS). Can produce false
+  positives if code links against a non-MSan-instrumented standard library;
+  treat findings as a lead to investigate, not gospel. On macOS, LeakSanitizer
+  is also limited/off — ASan+UBSan and TSan work fine there.
 
 There's no combined "every sanitizer at once" build — TSan and MSan are each
 incompatible with ASan/UBSan and with each other, so they can never share a
@@ -64,13 +66,13 @@ finishes and only surfaces findings for your own code.
 ## Starting a new project from this template
 
 ```sh
-~/Projects/cpp/cpp-starter/new-project.sh ~/Projects/cpp/<project-name>
+~/Projects/cpp/cpp-dev-bootstrap/new-project.sh ~/Projects/cpp/<project-name>
 ```
 
 Or by hand:
 
 ```sh
-cp -r ~/Projects/cpp/cpp-starter/template ~/Projects/cpp/<project-name>
+cp -r ~/Projects/cpp/cpp-dev-bootstrap/template ~/Projects/cpp/<project-name>
 cd ~/Projects/cpp/<project-name>
 git init
 ```

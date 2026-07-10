@@ -17,13 +17,19 @@ log() { printf '\n==> %s\n' "$1"; }
 install_packages() {
   if command -v pacman >/dev/null 2>&1; then
     log "Installing packages via pacman"
-    sudo pacman -S --needed clang llvm lldb lld cmake ninja ccache git
+    # curl/zip/unzip/tar/pkgconf are vcpkg's own prerequisites for
+    # fetching and building ports.
+    sudo pacman -S --needed clang llvm lldb lld cmake ninja ccache git \
+      curl zip unzip tar pkgconf
 
   elif command -v apt-get >/dev/null 2>&1; then
     log "Installing packages via apt-get"
     sudo apt-get update
     # Debian/Ubuntu names ninja's package "ninja-build", not "ninja".
-    sudo apt-get install -y clang llvm lldb lld cmake ninja-build ccache git
+    # curl/zip/unzip/tar/pkg-config are vcpkg's prerequisites -- absent on
+    # minimal Ubuntu/WSL images, and vcpkg fails without them.
+    sudo apt-get install -y clang llvm lldb lld cmake ninja-build ccache git \
+      curl zip unzip tar pkg-config
 
   elif command -v brew >/dev/null 2>&1; then
     log "Installing packages via Homebrew"
@@ -33,8 +39,11 @@ install_packages() {
     llvm_prefix="$(brew --prefix llvm)"
     echo
     echo "NOTE: Homebrew's llvm is keg-only (macOS ships its own old clang)."
-    echo "Add this to your shell rc so 'clang++'/'lldb' resolve to Homebrew's:"
+    echo "Add this to your shell rc so 'clang++'/'clang-tidy' resolve to Homebrew's:"
     echo "  export PATH=\"$llvm_prefix/bin:\$PATH\""
+    echo "For debugging, prefer the system lldb (/usr/bin/lldb, from"
+    echo "'xcode-select --install') -- Homebrew's lldb often can't attach"
+    echo "due to macOS code-signing restrictions."
 
   else
     echo "No supported package manager found (looked for pacman, apt-get, brew)." >&2
@@ -77,6 +86,21 @@ add_env_block() {
 }
 
 configure_shell() {
+  # Create the login shell's rc file if it doesn't exist yet. A fresh macOS
+  # account has no ~/.zshrc at all, and add_env_block skips missing files --
+  # without this, bootstrap would install everything but never set
+  # VCPKG_ROOT, and the failure would only surface later (vcpkg deps
+  # silently not resolving at CMake configure time).
+  local login_rc=""
+  case "$(basename "${SHELL:-}")" in
+    bash) login_rc="$HOME/.bashrc" ;;
+    zsh)  login_rc="$HOME/.zshrc" ;;
+  esac
+  if [ -n "$login_rc" ] && [ ! -f "$login_rc" ]; then
+    log "Creating $login_rc (login shell rc did not exist)"
+    touch "$login_rc"
+  fi
+
   add_env_block "$HOME/.bashrc"
   add_env_block "$HOME/.zshrc"
 }
@@ -85,6 +109,16 @@ main() {
   install_packages
   install_vcpkg
   configure_shell
+
+  # Quick sanity summary -- on a fresh machine this immediately shows
+  # whether anything is missing or resolving to an unexpected version
+  # (e.g. Apple clang instead of Homebrew's before the PATH fix).
+  log "Installed tool versions"
+  local t
+  for t in clang++ cmake ninja lldb ccache git; do
+    printf '  %-8s %s\n' "$t" \
+      "$("$t" --version 2>/dev/null | head -n 1 || echo 'NOT FOUND on PATH')"
+  done
 
   log "Done"
   echo "Restart your shell (or 'source ~/.bashrc') to pick up VCPKG_ROOT."
