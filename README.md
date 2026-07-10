@@ -7,7 +7,7 @@ run one script to get the same setup on any machine.
 ## Bootstrap a new machine
 
 ```sh
-git clone <this-repo-url> ~/Projects/cpp/cpp-dev-bootstrap
+git clone git@github.com:hazlam/cpp-dev-bootstrap.git ~/Projects/cpp/cpp-dev-bootstrap
 cd ~/Projects/cpp/cpp-dev-bootstrap
 ./bootstrap.sh
 ```
