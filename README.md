@@ -16,7 +16,14 @@ cd ~/Projects/cpp/cpp-dev-bootstrap
 
 1. Installs the toolchain via whichever package manager it finds
    (`pacman`, `apt-get`, or `brew`): `clang`, `llvm`, `lldb`, `lld`, `cmake`,
-   `ninja`, `ccache`, `git`.
+   `ninja`, `ccache`, `git`. The kit standardizes on **Clang + libc++**: on
+   `apt-get` systems it pulls a pinned modern LLVM from
+   [apt.llvm.org](https://apt.llvm.org) (default major version 22, override
+   with `LLVM_VERSION=20 ./bootstrap.sh`) rather than the distro's own
+   `clang` package, since Ubuntu's default is years behind and too old for
+   C++23 `<print>`/`std::println`. `update-alternatives` then points
+   unversioned `clang`/`clang++`/`clang-tidy`/`clang-format`/`lldb` at it, so
+   the template's `Makefile` (`CXX := clang++`) needs no changes per distro.
 2. Clones and bootstraps [vcpkg](https://github.com/microsoft/vcpkg) to
    `~/vcpkg` (or `$VCPKG_ROOT` if already set).
 3. Adds `VCPKG_ROOT`/`PATH` exports to `~/.bashrc` and `~/.zshrc` (whichever
@@ -35,12 +42,13 @@ After bootstrapping, restart your shell (or `source ~/.bashrc`) so
 - **WSL**: use WSL2 — sanitizers and ptrace-based debugging (lldb) are
   unreliable on WSL1. Keep projects on the Linux filesystem (`~/...`), not
   `/mnt/c/...`: builds are dramatically faster and tooling behaves.
-- **Debian/Ubuntu** (incl. WSL2 Ubuntu): the distro's default toolchain may
-  be too old for C++23. `std::println`/`<print>` (used in the template's
-  hello world) needs libstdc++ from GCC 14+ or a recent libc++ — on Ubuntu
-  24.04 that means installing a newer compiler (`gcc-14`, or clang from
-  [apt.llvm.org](https://apt.llvm.org)) before `make build` succeeds, or
-  temporarily swapping the hello world to `<iostream>`.
+- **Debian/Ubuntu** (incl. WSL2 Ubuntu): `bootstrap.sh` handles the toolchain
+  gap automatically now (see above) — it installs a pinned modern
+  clang + libc++ from apt.llvm.org and wires up `update-alternatives`, so
+  `make build`/`make run` work with C++23 `<print>`/`std::println` out of the
+  box. The template's `CMakeLists.txt` passes `-stdlib=libc++` to Clang for
+  the same reason (`-DUSE_LIBCXX=OFF` to fall back to system libstdc++ if
+  it's GCC 14+ and new enough).
 - **macOS**:
   - Homebrew's `llvm` is keg-only; bootstrap prints the exact `PATH` line to
     add so `clang++`/`clang-tidy` resolve to it.

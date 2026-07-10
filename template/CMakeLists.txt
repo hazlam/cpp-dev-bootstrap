@@ -20,6 +20,17 @@ target_compile_options(app PRIVATE
   -Wall -Wextra -Wpedantic -Wshadow -Wconversion
 )
 
+# --- Standard library ------------------------------------------------------
+# C++23 <print>/std::println needs a recent stdlib. With Clang we standardize
+# on libc++ (opt in explicitly; Clang otherwise defaults to the system
+# libstdc++, which is too old on Debian/Ubuntu). GCC uses its own libstdc++
+# (needs >= 14). Toggle with -DUSE_LIBCXX=OFF if you have a new-enough libstdc++.
+option(USE_LIBCXX "Compile/link against libc++ (Clang only)" ON)
+if(USE_LIBCXX AND CMAKE_CXX_COMPILER_ID MATCHES "Clang")
+  target_compile_options(app PRIVATE -stdlib=libc++)
+  target_link_options(app PRIVATE -stdlib=libc++)
+endif()
+
 # --- Sanitizers ------------------------------------------------------------
 # Selectable via -DSANITIZE=<set>. The Makefile picks the right value and a
 # dedicated build directory per target, since these sets are mutually

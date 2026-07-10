@@ -19,6 +19,14 @@ make clean     # remove all build dirs
 
 Compare against GCC any time with `make CXX=g++ build`.
 
+C++23 `<print>`/`std::println` needs a recent stdlib, so with Clang the build
+links `libc++` (`-stdlib=libc++`, `USE_LIBCXX` in `CMakeLists.txt`) instead of
+whatever libstdc++ the distro ships — `bootstrap.sh` installs both a modern
+clang and libc++ together for this reason. Pass `-DUSE_LIBCXX=OFF` (e.g.
+`cmake -B build -DUSE_LIBCXX=OFF`) if your system libstdc++ is GCC 14+ and
+you'd rather use that. With `make CXX=g++`, GCC always uses its own libstdc++
+regardless of this flag — you'll need GCC 14+ for `<print>` to exist.
+
 ## Sanitizers
 
 `build`, `run-tsan`, and `run-msan` each configure into their own build
