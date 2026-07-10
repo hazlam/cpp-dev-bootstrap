@@ -44,9 +44,9 @@ After bootstrapping, restart your shell (or `source ~/.bashrc`) so
 - **macOS**:
   - Homebrew's `llvm` is keg-only; bootstrap prints the exact `PATH` line to
     add so `clang++`/`clang-tidy` resolve to it.
-  - `make debug-msan` is **Linux-only** — MemorySanitizer does not support
+  - `make run-msan` is **Linux-only** — MemorySanitizer does not support
     macOS. LeakSanitizer is also limited/off on macOS; ASan+UBSan
-    (`make build`) and TSan (`make debug-tsan`) work fine.
+    (`make build`) and TSan (`make run-tsan`) work fine.
   - If Homebrew's `lldb` fails to attach (code-signing), use the system one:
     `/usr/bin/lldb` from `xcode-select --install`.
   - Apple ships GNU make 3.81 (2006). The template Makefile sticks to

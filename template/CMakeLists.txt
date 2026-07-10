@@ -28,11 +28,11 @@ target_compile_options(app PRIVATE
 #                          Default for `make build`. Good all-rounder for the
 #                          pointer/memory/move-semantics chapters.
 #   thread              -- ThreadSanitizer. Incompatible with ASan. Own build
-#                          dir via `make debug-tsan`, for the threading
+#                          dir via `make run-tsan`, for the threading
 #                          projects.
 #   memory              -- MemorySanitizer (uninitialized reads). Clang-only,
 #                          incompatible with ASan/TSan. Own build dir via
-#                          `make debug-msan`. Best-effort: can be noisy unless
+#                          `make run-msan`. Best-effort: can be noisy unless
 #                          the whole standard library is also MSan-instrumented.
 #   none                -- no sanitizers (used by `make release`).
 set(SANITIZE "address,undefined" CACHE STRING

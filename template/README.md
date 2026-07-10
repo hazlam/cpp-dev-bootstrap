@@ -9,12 +9,11 @@ make build     # Debug build with ASan + UBSan (default)
 make run       # build + run ./build/app
 make test      # ctest
 make debug     # plain debug build (no sanitizers) + open in lldb
-make debug-san # ASan+UBSan build + open in lldb (see caveat below)
+make run-tsan  # ThreadSanitizer build + run (own dir) -> build-tsan/app
+make run-msan  # MemorySanitizer build + run (own dir, clang-only, Linux-only)
+make release   # optimized build, no sanitizers -> build-release/app
 make format    # clang-format src/
 make tidy      # clang-tidy src/
-make release   # optimized build, no sanitizers -> build-release/app
-make debug-tsan # ThreadSanitizer build (own dir) -> build-tsan/app
-make debug-msan # MemorySanitizer build (own dir, clang-only, Linux-only)
 make clean     # remove all build dirs
 ```
 
@@ -22,16 +21,16 @@ Compare against GCC any time with `make CXX=g++ build`.
 
 ## Sanitizers
 
-`build`, `debug-tsan`, and `debug-msan` each configure into their own build
+`build`, `run-tsan`, and `run-msan` each configure into their own build
 directory (`build/`, `build-tsan/`, `build-msan/`) because these sanitizer
 sets cannot be linked together:
 
-- **ASan + UBSan** (+ LeakSanitizer, bundled with ASan) — default `make build`.
-  Catches out-of-bounds access, use-after-free, leaks, signed overflow,
-  misaligned access, etc. Good default for most learning projects.
-- **TSan** (`make debug-tsan`) — data races across threads. Use for the
+- **ASan + UBSan** (+ LeakSanitizer, bundled with ASan) — default `make build`
+  and `make run`. Catches out-of-bounds access, use-after-free, leaks, signed
+  overflow, misaligned access, etc. Good default for most learning projects.
+- **TSan** (`make run-tsan`) — data races across threads. Use for the
   concurrency projects.
-- **MSan** (`make debug-msan`) — reads of uninitialized memory. Clang-only and
+- **MSan** (`make run-msan`) — reads of uninitialized memory. Clang-only and
   **Linux-only** (MemorySanitizer doesn't support macOS). Can produce false
   positives if code links against a non-MSan-instrumented standard library;
   treat findings as a lead to investigate, not gospel. On macOS, LeakSanitizer
@@ -39,13 +38,18 @@ sets cannot be linked together:
 
 There's no combined "every sanitizer at once" build — TSan and MSan are each
 incompatible with ASan/UBSan and with each other, so they can never share a
-binary. That's also why debugging is split in two: `make debug` (plain, no
-sanitizers — best for ordinary logic bugs, no instrumentation noise) vs.
-`make debug-san` (the ASan+UBSan build under lldb, e.g. to catch a sanitizer
-abort and inspect state at the point of failure). `debug-san` disables
-LeakSanitizer's exit-time scan, since LSan's own use of ptrace conflicts with
-lldb ptracing the same process. `debug-tsan`/`debug-msan` run their binary
-directly (no lldb attached) and print a report on failure, same as before.
+binary.
+
+`make debug` is the only target that opens lldb, and it uses a plain,
+sanitizer-free build (`build-debug/`) so nothing interrupts your
+step-through. If you specifically want lldb on the sanitized binary (e.g. to
+inspect state right where ASan aborts), run it by hand with LeakSanitizer's
+exit-time scan disabled — LSan's ptrace use conflicts fatally with lldb
+ptracing the same process:
+
+```sh
+ASAN_OPTIONS=detect_leaks=0 lldb ./build/app
+```
 
 Note: `make tidy`'s `clang-analyzer-*` checks trace into standard-library headers
 (e.g. `<print>`/`<format>`) when your code calls into them, which is slow and prints a
