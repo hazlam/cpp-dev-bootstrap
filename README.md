@@ -29,12 +29,14 @@ cd ~/Projects/cpp/cpp-dev-bootstrap
 3. Adds `VCPKG_ROOT`/`PATH` exports to `~/.bashrc` and `~/.zshrc` (whichever
    exist), skipping the file if it's already configured.
 
-Only the `pacman` branch has been exercised end-to-end (this repo was built on
-Arch); the `apt-get` and `brew` branches follow the same shape but should be
-sanity-checked the first time you bootstrap a Debian/Ubuntu or macOS machine.
+The `pacman` branch (Arch) is the primary platform. The `apt-get`
+(Debian/Ubuntu, see #1/#2) and `brew` (macOS, see #3) branches have since been
+exercised end-to-end on real machines — each has a workflow under
+`.github/workflows/` that re-runs the real `bootstrap.sh` plus a fresh
+`new-project.sh` scaffold build on every push, so all three paths stay covered.
 
-After bootstrapping, restart your shell (or `source ~/.bashrc`) so
-`VCPKG_ROOT` takes effect.
+After bootstrapping, restart your shell (or `source ~/.bashrc` on bash /
+`source ~/.zshrc` on zsh, e.g. macOS) so `VCPKG_ROOT` takes effect.
 
 ## Platform notes (Arch / WSL2 / macOS — no native Windows)
 
@@ -49,17 +51,19 @@ After bootstrapping, restart your shell (or `source ~/.bashrc`) so
   box. The template's `CMakeLists.txt` passes `-stdlib=libc++` to Clang for
   the same reason (`-DUSE_LIBCXX=OFF` to fall back to system libstdc++ if
   it's GCC 14+ and new enough).
-- **macOS**:
+- **macOS** (Apple Silicon, tested end-to-end on macOS 26 / Homebrew LLVM 22):
   - Homebrew's `llvm` is keg-only; bootstrap prints the exact `PATH` line to
     add so `clang++`/`clang-tidy` resolve to it.
   - `make run-msan` is **Linux-only** — MemorySanitizer does not support
-    macOS. LeakSanitizer is also limited/off on macOS; ASan+UBSan
-    (`make build`) and TSan (`make run-tsan`) work fine.
-  - If Homebrew's `lldb` fails to attach (code-signing), use the system one:
-    `/usr/bin/lldb` from `xcode-select --install`.
-  - Apple ships GNU make 3.81 (2006). The template Makefile sticks to
-    old-make features, but if a target ever misbehaves there,
-    `brew install make` and run `gmake` instead.
+    macOS (it fails at compile time with a clear "unsupported option" error).
+    LeakSanitizer is also limited/off on macOS; ASan+UBSan (`make build`) and
+    TSan (`make run-tsan`) work fine.
+  - Homebrew's `lldb` attached and ran fine in testing (`make debug`). If it
+    ever fails to attach on your machine (code-signing/SIP), fall back to the
+    system one: `/usr/bin/lldb` from `xcode-select --install`.
+  - Apple ships GNU make 3.81 (2006); the template Makefile is verified against
+    it, so the default `/usr/bin/make` works — no `brew install make` / `gmake`
+    needed.
 
 ## Start a new project
 

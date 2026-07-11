@@ -1,0 +1,48 @@
+# Exercises the macOS/Homebrew path end-to-end: the real bootstrap.sh, then a
+# fresh new-project.sh scaffold, built and run. This path was untested (see
+# issue #3) -- a green run here is direct proof it keeps working on macOS.
+# Homebrew's llvm is keg-only, so this also asserts the PATH line bootstrap.sh
+# prints actually makes clang++/clang-tidy resolve to Homebrew's LLVM rather
+# than Apple's too-old system clang (which predates C++23 <print>).
+name: macos-bootstrap
+on:
+  push:
+  pull_request:
+  workflow_dispatch:
+
+jobs:
+  bootstrap-build:
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [macos-latest] # Apple Silicon runner
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Bootstrap the Homebrew toolchain path
+        run: ./bootstrap.sh
+
+      - name: Expose VCPKG_ROOT and keg-only LLVM to later steps
+        # bootstrap.sh writes VCPKG_ROOT to ~/.zshrc (a fresh non-login CI step
+        # never sources it) and, because Homebrew's llvm is keg-only, only
+        # *prints* the PATH line rather than writing it anywhere. Reproduce
+        # both here -- prepending Homebrew's llvm/bin is what makes clang++ /
+        # clang-tidy resolve to LLVM 22 instead of Apple's system clang.
+        run: |
+          echo "VCPKG_ROOT=$HOME/vcpkg" >> "$GITHUB_ENV"
+          echo "$(brew --prefix llvm)/bin" >> "$GITHUB_PATH"
+
+      - name: Verify unversioned tools resolve to Homebrew LLVM
+        run: |
+          clang++ --version
+          clang-tidy --version
+          clang-format --version
+
+      - name: Scaffold a fresh project and build + run it
+        run: |
+          set -o pipefail
+          ./new-project.sh "$RUNNER_TEMP/smoke"
+          cd "$RUNNER_TEMP/smoke"
+          make run | tee "$RUNNER_TEMP/run.log"
+          grep -q 'Hello, world!' "$RUNNER_TEMP/run.log"
